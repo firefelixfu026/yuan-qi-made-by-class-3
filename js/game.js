@@ -1,17 +1,15 @@
 class YuanQiGame {
     constructor() {
-        this.players = {
-            1: { hp: 10, mp: 0, selectedSkill: null },
-            2: { hp: 10, mp: 0, selectedSkill: null }
-        };
+        this.player = { alive: true, mp: 0, selectedSkill: null };
+        this.ai = { alive: true, mp: 0, selectedSkill: null };
         this.round = 1;
         this.gameOver = false;
         this.skills = {
-            ramen: { name: '拉面', mp: 2, damage: 0, type: 'magic', defense: null },
-            slash: { name: '一斩', mp: 0, damage: 0.5, type: 'slash', defense: null },
-            Ldef: { name: 'L防', mp: 1, damage: 0, type: 'defense', defense: 'slash' },
-            wave: { name: '波', mp: 2, damage: 2, type: 'wave', defense: null },
-            Xdef: { name: 'X防', mp: 1, damage: 0, type: 'defense', defense: 'wave' }
+            ramen: { name: '拉面', mpGain: 2, damage: 0, type: 'magic', defense: null },
+            slash: { name: '一斩', mpCost: 0, damage: 0.5, type: 'slash', defense: null },
+            Ldef: { name: 'L防', mpGain: 1, damage: 0, type: 'defense', defense: 'slash' },
+            wave: { name: '波', mpCost: 2, damage: 2, type: 'wave', defense: null },
+            Xdef: { name: 'X防', mpGain: 1, damage: 0, type: 'defense', defense: 'wave' }
         };
         this.logs = [];
         this.init();
@@ -20,34 +18,83 @@ class YuanQiGame {
     init() {
         this.bindEvents();
         this.updateUI();
+        this.addLog('游戏开始！玩家 vs AI', 'magic');
     }
 
     bindEvents() {
-        document.querySelectorAll('.skill').forEach(btn => {
+        document.querySelectorAll('#skills1 .skill').forEach(btn => {
             btn.addEventListener('click', (e) => this.selectSkill(e));
         });
         document.getElementById('restart').addEventListener('click', () => this.restart());
     }
 
     selectSkill(e) {
-        if (this.gameOver) return;
+        if (this.gameOver || !this.player.alive) return;
         
-        const player = parseInt(e.target.dataset.player);
         const skill = e.target.dataset.skill;
         
-        if (!this.canUseSkill(player, skill)) {
-            this.addLog(`玩家 ${player} 魔力不足，无法使用 ${this.skills[skill].name}！`, 'damage');
+        if (!this.canUseSkill(this.player, skill)) {
+            this.addLog(`魔力不足，无法使用 ${this.skills[skill].name}！需要 ${this.skills[skill].mpCost || 0} 点魔力`, 'damage');
             return;
         }
         
-        this.players[player].selectedSkill = skill;
-        this.highlightSelection(player, skill);
-        this.checkBothSelected();
+        this.player.selectedSkill = skill;
+        this.highlightSelection(1, skill);
+        this.addLog(`你选择了 ${this.skills[skill].name}`, 'magic');
+        
+        setTimeout(() => this.aiSelectSkill(), 800);
     }
 
-    canUseSkill(player, skill) {
+    aiSelectSkill() {
+        const availableSkills = Object.keys(this.skills).filter(skill => 
+            this.canUseSkill(this.ai, skill)
+        );
+        
+        if (availableSkills.length === 0) {
+            this.ai.selectedSkill = 'ramen';
+        } else {
+            this.ai.selectedSkill = this.aiChooseSkill(availableSkills);
+        }
+        
+        this.addLog(`AI选择了 ${this.skills[this.ai.selectedSkill].name}`, 'magic');
+        this.highlightSelection(2, this.ai.selectedSkill);
+        
+        setTimeout(() => this.resolveRound(), 800);
+    }
+
+    aiChooseSkill(availableSkills) {
+        const aiMp = this.ai.mp;
+        const playerSelected = this.player.selectedSkill;
+        
+        if (playerSelected === 'slash') {
+            if (availableSkills.includes('Ldef')) return 'Ldef';
+            if (availableSkills.includes('Xdef')) return 'Xdef';
+        }
+        
+        if (playerSelected === 'wave') {
+            if (availableSkills.includes('Xdef')) return 'Xdef';
+            if (availableSkills.includes('Ldef')) return 'Ldef';
+        }
+        
+        if (aiMp >= 2 && availableSkills.includes('wave')) {
+            return 'wave';
+        }
+        
+        if (availableSkills.includes('slash')) {
+            return 'slash';
+        }
+        
+        if (availableSkills.includes('ramen')) {
+            return 'ramen';
+        }
+        
+        return availableSkills[Math.floor(Math.random() * availableSkills.length)];
+    }
+
+    canUseSkill(entity, skill) {
         const skillData = this.skills[skill];
-        return this.players[player].mp >= skillData.mp;
+        const cost = skillData.mpCost || 0;
+        return entity.mp >= cost;
     }
 
     highlightSelection(player, skill) {
@@ -56,63 +103,60 @@ class YuanQiGame {
         container.querySelector(`[data-skill="${skill}"]`).classList.add('selected');
     }
 
-    checkBothSelected() {
-        if (this.players[1].selectedSkill && this.players[2].selectedSkill) {
-            setTimeout(() => this.resolveRound(), 500);
-        }
-    }
-
     resolveRound() {
-        const skill1 = this.skills[this.players[1].selectedSkill];
-        const skill2 = this.skills[this.players[2].selectedSkill];
+        const playerSkill = this.skills[this.player.selectedSkill];
+        const aiSkill = this.skills[this.ai.selectedSkill];
         
         this.addLog(`=== 第 ${this.round} 回合 ===`, 'magic');
-        this.addLog(`玩家1使用 ${skill1.name}，玩家2使用 ${skill2.name}`, 'magic');
+        this.addLog(`你使用 ${playerSkill.name}，AI使用 ${aiSkill.name}`, 'magic');
         
-        this.applySkill(1, skill1, 2, skill2);
-        this.applySkill(2, skill2, 1, skill1);
+        const playerDamage = this.calculateDamage(playerSkill, aiSkill);
+        const aiDamage = this.calculateDamage(aiSkill, playerSkill);
         
-        this.players[1].selectedSkill = null;
-        this.players[2].selectedSkill = null;
+        this.addLog(`你的伤害: ${playerDamage}，AI的伤害: ${aiDamage}`, 'damage');
+        
+        if (playerDamage > aiDamage) {
+            this.addLog(`你的伤害更高！AI受到伤害！`, 'damage');
+            this.ai.alive = false;
+        } else if (aiDamage > playerDamage) {
+            this.addLog(`AI的伤害更高！你受到伤害！`, 'damage');
+            this.player.alive = false;
+        } else {
+            this.addLog(`伤害相同，双方均未被命中！`, 'defense');
+        }
+        
+        this.updateMana(playerSkill, this.player);
+        this.updateMana(aiSkill, this.ai);
+        
+        this.player.selectedSkill = null;
+        this.ai.selectedSkill = null;
         
         this.clearSelections();
         this.updateUI();
         this.round++;
         
-        if (this.players[1].hp <= 0 || this.players[2].hp <= 0) {
+        if (!this.player.alive || !this.ai.alive) {
             this.endGame();
         }
     }
 
-    applySkill(player, skill, opponent, opponentSkill) {
-        const p = this.players[player];
-        const opp = this.players[opponent];
-        const oppSkill = opponentSkill;
+    calculateDamage(attackSkill, defenseSkill) {
+        if (attackSkill.damage === 0) return 0;
         
-        p.mp += skill.mp;
+        if (defenseSkill.type === 'defense' && defenseSkill.defense === attackSkill.type) {
+            this.addLog(`${defenseSkill.name}成功防御了${attackSkill.name}！`, 'defense');
+            return 0;
+        }
         
-        if (skill.damage > 0) {
-            let damage = skill.damage;
-            let blocked = false;
-            
-            if (oppSkill.type === 'defense') {
-                if (oppSkill.defense === skill.type) {
-                    blocked = true;
-                    this.addLog(`玩家${opponent}使用${oppSkill.name}完全防御了玩家${player}的${skill.name}！`, 'defense');
-                } else if (skill.type === 'wave' && oppSkill.defense === 'slash') {
-                    damage *= 2;
-                    this.addLog(`玩家${opponent}的${oppSkill.name}无法防御波类伤害，${skill.name}伤害加倍！`, 'damage');
-                } else if (skill.type === 'slash' && oppSkill.defense === 'wave') {
-                    this.addLog(`玩家${opponent}的${oppSkill.name}无法防御斩类伤害！`, 'damage');
-                }
-            }
-            
-            if (!blocked) {
-                opp.hp -= damage;
-                this.addLog(`玩家${player}的${skill.name}对玩家${opponent}造成 ${damage} 点伤害！`, 'damage');
-            }
-        } else {
-            this.addLog(`玩家${player}使用${skill.name}，获得 ${skill.mp} 点魔力`, 'magic');
+        return attackSkill.damage;
+    }
+
+    updateMana(skill, entity) {
+        if (skill.mpGain) {
+            entity.mp += skill.mpGain;
+        }
+        if (skill.mpCost) {
+            entity.mp -= skill.mpCost;
         }
     }
 
@@ -131,16 +175,23 @@ class YuanQiGame {
     }
 
     updateUI() {
-        document.getElementById('hp1').textContent = Math.max(0, this.players[1].hp);
-        document.getElementById('hp2').textContent = Math.max(0, this.players[2].hp);
-        document.getElementById('mp1').textContent = this.players[1].mp;
-        document.getElementById('mp2').textContent = this.players[2].mp;
+        document.getElementById('hp1').textContent = this.player.alive ? '存活' : '已阵亡';
+        document.getElementById('hp2').textContent = this.ai.alive ? '存活' : '已阵亡';
+        document.getElementById('mp1').textContent = this.player.mp;
+        document.getElementById('mp2').textContent = this.ai.mp;
         document.getElementById('round').textContent = this.round;
         
-        document.getElementById('round-status').textContent = 
-            this.players[1].selectedSkill && this.players[2].selectedSkill 
-                ? '结算中...' 
-                : `第 ${this.round} 回合 - 双方请出招`;
+        const status = !this.player.alive ? '你已阵亡！' : 
+                      !this.ai.alive ? 'AI已阵亡！' : 
+                      this.player.selectedSkill ? '等待AI选择...' : `第 ${this.round} 回合 - 请选择技能`;
+        
+        document.getElementById('round-status').textContent = status;
+        
+        const skillButtons = document.querySelectorAll('#skills1 .skill');
+        skillButtons.forEach(btn => {
+            const skill = btn.dataset.skill;
+            btn.disabled = !this.canUseSkill(this.player, skill) || this.gameOver;
+        });
     }
 
     endGame() {
@@ -148,12 +199,12 @@ class YuanQiGame {
         const result = document.getElementById('result');
         const winner = document.getElementById('winner');
         
-        if (this.players[1].hp <= 0 && this.players[2].hp <= 0) {
+        if (!this.player.alive && !this.ai.alive) {
             winner.textContent = '平局！双方同归于尽！';
-        } else if (this.players[1].hp <= 0) {
-            winner.textContent = '🎉 玩家 2 获胜！';
+        } else if (!this.player.alive) {
+            winner.textContent = '💀 你败北了！AI获胜！';
         } else {
-            winner.textContent = '🎉 玩家 1 获胜！';
+            winner.textContent = '🎉 你获胜了！AI已阵亡！';
         }
         
         result.style.display = 'block';
@@ -161,10 +212,8 @@ class YuanQiGame {
     }
 
     restart() {
-        this.players = {
-            1: { hp: 10, mp: 0, selectedSkill: null },
-            2: { hp: 10, mp: 0, selectedSkill: null }
-        };
+        this.player = { alive: true, mp: 0, selectedSkill: null };
+        this.ai = { alive: true, mp: 0, selectedSkill: null };
         this.round = 1;
         this.gameOver = false;
         this.logs = [];
@@ -173,7 +222,7 @@ class YuanQiGame {
         document.querySelectorAll('.skill').forEach(btn => btn.disabled = false);
         this.clearSelections();
         this.updateUI();
-        this.addLog('游戏重新开始！', 'magic');
+        this.addLog('游戏重新开始！玩家 vs AI', 'magic');
     }
 }
 
