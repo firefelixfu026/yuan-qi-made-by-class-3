@@ -6,10 +6,10 @@ class YuanQiGame {
         this.gameOver = false;
         this.skills = {
             ramen: { name: '拉面', mp: 2, damage: 0, type: 'magic' },
-            slash: { name: '一斩', mp: 0, damage: 0.5, type: 'slash' },
+            slash: { name: '一斩', mp: 0, damage: 0.5, type: 'attack' },
             Ldef: { name: 'L防', mp: 1, damage: 0, type: 'defense', defense: 'slash' },
             wave: { name: '波', mp: -2, damage: 2, type: 'wave' },
-            Xdef: { name: 'X防', mp: 1, damage: 0, type: 'defense', defense: 'wave' }
+            Xdef: { name: 'X防', mp: 1, damage: 0, type: 'defense', defense: ['wave', 'attack'] }
         };
         this.init();
     }
