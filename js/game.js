@@ -23,15 +23,15 @@ class YuanQiGame {
 
     bindEvents() {
         document.querySelectorAll('#skills1 .skill').forEach(btn => {
-            btn.addEventListener('click', (e) => this.selectSkill(e));
+            btn.addEventListener('click', (e) => this.selectSkill(e.currentTarget));
         });
         document.getElementById('restart').addEventListener('click', () => this.restart());
     }
 
-    selectSkill(e) {
+    selectSkill(btn) {
         if (this.gameOver || !this.player.alive) return;
         
-        const skill = e.target.dataset.skill;
+        const skill = btn.dataset.skill;
         
         if (!this.canUseSkill(this.player, skill)) {
             this.addLog(`魔力不足，无法使用 ${this.skills[skill].name}！需要 ${this.skills[skill].mpCost || 0} 点魔力`, 'damage');
