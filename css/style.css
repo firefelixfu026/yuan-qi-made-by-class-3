@@ -200,6 +200,28 @@ h1 {
     margin-bottom: 20px;
 }
 
+.actions {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#next-round {
+    padding: 12px 30px;
+    font-size: 1.1em;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+#next-round:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
 #restart {
     padding: 15px 40px;
     font-size: 1.2em;
