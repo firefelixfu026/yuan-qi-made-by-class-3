@@ -12,18 +12,16 @@
         
         <div class="game-info">
             <div class="player player1">
-                <h2>🧑 你</h2>
+                <h2>🧑 你 <span class="mp-badge">🔮 <span id="mp1">0</span></span></h2>
                 <div class="stats">
                     <div class="hp">❤️ <span id="hp1">存活</span></div>
-                    <div class="mp">🔮 <span id="mp1">0</span></div>
                 </div>
             </div>
             <div class="vs">VS</div>
             <div class="player player2">
-                <h2>🤖 AI</h2>
+                <h2>🤖 AI <span class="mp-badge">🔮 <span id="mp2">0</span></span></h2>
                 <div class="stats">
                     <div class="hp">❤️ <span id="hp2">存活</span></div>
-                    <div class="mp">🔮 <span id="mp2">0</span></div>
                 </div>
             </div>
         </div>
@@ -45,9 +43,15 @@
             </div>
         </div>
 
-        <div class="battle-log" id="battle-log">
-            <h3>战斗记录</h3>
-            <div id="log-content"></div>
+        <div class="battle-log-container">
+            <div class="battle-log" id="player-log">
+                <h3>🧑 你的记录</h3>
+                <div id="player-log-content"></div>
+            </div>
+            <div class="battle-log" id="ai-log">
+                <h3>🤖 AI的记录</h3>
+                <div id="ai-log-content"></div>
+            </div>
         </div>
 
         <div class="result" id="result" style="display:none;">

@@ -48,10 +48,22 @@ h1 {
 .player h2 {
     color: #333;
     margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .player1 h2 { color: #e74c3c; }
 .player2 h2 { color: #3498db; }
+
+.mp-badge {
+    font-size: 0.8em;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-weight: normal;
+}
 
 .stats {
     display: flex;
@@ -138,11 +150,17 @@ h1 {
     opacity: 0.9;
 }
 
+.battle-log-container {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
 .battle-log {
+    flex: 1;
     background: #f8f9fa;
     border-radius: 15px;
     padding: 20px;
-    margin-bottom: 20px;
     max-height: 300px;
     overflow-y: auto;
 }
